@@ -1,0 +1,224 @@
+<div class="burst-12" *ngIf="newHighscore" (click)="this.newHighscore = false"></div>
+<div class="zero-title title-border">
+  <table class="zero-title">
+    <tr>
+      <td class="zero-title">
+        <span>{{title}}</span>
+      </td>
+      <td class="zero-title">
+        <span class="fa fa-refresh title-button cursor-pointer" (click)="newZero()"></span>
+        <span class="fa fa-info title-button cursor-pointer" (click)="showHint()">
+          <span class="zero-font zero-hint-counter" [ngClass]="{'flash-hint': flashHint}">{{helpCounter}}</span>
+        </span>
+        <span class="fa fa-gears title-button cursor-pointer" (click)="showSettings()"></span>
+        <span class="fa fa-bar-chart title-button cursor-pointer" (click)="showHighscore()"></span>
+        <span class="fa fa-question title-button cursor-pointer" (click)="showHelp()"></span>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="zero-title">
+  <table class="zero-title">
+    <tr>
+      <td class="zero-message">
+        <span>{{zeroMessage}}</span>
+      </td>
+      <td class="zero-message text-right">
+        <span>{{zeroMoves}}</span>
+      </td>
+    </tr> 
+  </table>
+</div>
+
+<div class="zero-container">
+  <table class="zero-container">
+    <tr *ngFor="let d of dummyArray(zeroSize).fill(); let i = index;">
+      <td *ngFor="let d of dummyArray(zeroSize).fill(); let j = index;" class="zero" [style.width]="display.zeroCellSize" [style.height]="display.zeroCellSize"
+        (click)="selectCell(i * zeroSize + j)"
+        [ngClass]="{'flash-hint': flashHint && arrClearPathPosition.indexOf((i * zeroSize + j)) !== -1,
+                    'flash-clear': arrClearFlash.length > 0 && arrClearFlash.indexOf((i * zeroSize + j)) !== -1,
+                    'infinite-new-zero': isInfinite && showNewZeros && arrEmptyCells.indexOf((i * zeroSize + j)) !== -1,
+                    'negative': arrGrid[i * zeroSize + j].zeroValue < 0,
+                    'positive': arrGrid[i * zeroSize + j].zeroValue > 0,
+                    'selected': arrGrid[i * zeroSize + j].isSelected}">
+        {{arrGrid[i * zeroSize + j].zeroValue}}
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- <div class="zero-title">
+  <table class="zero-title">
+    <tr>
+      <td class="zero-message text-right">
+        <span>{{zeroSum}}</span>
+      </td>
+    </tr> 
+  </table>
+</div> -->
+
+<ng-template #popupSettings let-c="close" let-d="dismiss">
+  <div class="modal-header">
+    <h4 class="modal-title">{{title}} - Options</h4>
+    <button type="button" class="close" aria-label="Close" (click)="d('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <table class="settings-table">
+      <tr>
+        <td>Difficulty</td>
+        <td class="text-right">
+          <div ngbDropdown class="d-inline-block" placement="bottom-right">
+            <button type="button" class="btn btn-sm btn-white" id="gridDropdown" ngbDropdownToggle>
+              <span>{{arrDifficulty[selectedDifficulty].difficultyName}}</span>
+            </button>
+            <div ngbDropdownMenu aria-labelledby="gridDropdown">
+              <div class="dropdown-item" href="#" *ngFor="let difficulty of arrDifficulty; let i = index" (click)="setDifficulty(i)">
+                <span class="zero-font text-left cursor-pointer" (click)="setDifficulty(i)">{{difficulty.difficultyName}}</span>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>Infinite (No Best Score)</td>
+        <td class="text-right">
+          <input type="checkbox" name="infiniteGame" id="infiniteGame" [(ngModel)]="persistData.infiniteGame" [value]="false" (change)="savePersistData()">
+        </td>
+      </tr>
+    </table>
+  </div>
+</ng-template>
+
+<ng-template #popupConfirm let-c="close" let-d="dismiss">
+  <div class="modal-header">
+    <h4 class="modal-title">{{title}}</h4>
+    <button type="button" class="close" aria-label="Close" (click)="d('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div *ngFor="let message of zeroPopupMessage">{{message}}</div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-primary" (click)="c('Y')">Yes</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="d('N')">No</button>
+  </div>
+</ng-template>
+
+<ng-template #popupHighscore let-c="close" let-d="dismiss">
+  <div class="modal-header">
+    <h4 class="modal-title">{{title}} - Stats</h4>
+    <button type="button" class="close" aria-label="Close" (click)="d('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <table class="settings-table">
+      <tr class="text-center font-bold">
+        <td class="text-left">Difficulty</td>
+        <td>Best Score</td>
+        <td>Won</td>
+        <td>Played</td>
+      </tr>
+      <tr class="text-center" *ngFor="let highscore of arrDifficulty; let i = index">
+        <td class="text-left">{{highscore.difficultyName}}</td>
+        <td class="text-center"></td>
+        <td class="text-center"></td>
+        <td class="text-center"></td>
+      </tr>
+      <tr>
+        <td colspan="4" class="text-right p-top-10">
+          <button type="button" class="btn btn-outline-danger" (click)="resetStats()">Reset Stats</button>
+        </td>
+      </tr>
+    </table>
+  </div>
+</ng-template>
+
+<ng-template #popupHelp let-c="close" let-d="dismiss">
+  <div class="modal-header">
+    <h4 class="modal-title">{{title}} - Info</h4>
+    <button type="button" class="close" aria-label="Close" (click)="d('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <table class="settings-table">
+      <tr>
+        <td>
+          <div class="font-bold">{{title}} v{{zeroVersion}}</div>
+          <div>Developed by</div>
+          <div>Prabhu Thomas</div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <!-- <div class="font-bold">Objective and Instructions</div> -->
+          <div class="zero-help">
+            <ul class="list-unstyled">
+              <li class="font-bold zero-help-title">Objective and Instructions</li>
+              <li>The game of zero consists of a grid of nine rows and nine columns subdivided into nine 3x3 subgrids.</li>
+              <li>It has two basic rules -</li>
+              <li>
+                1. Fill each column, each row, and each box (3x3 subgrid) with the numbers 1 to 9.
+                <ol type="a" style="margin-left: -6vw;">
+                  <li>Each row (9 squares) should have all the numbers 1 to 9</li>
+                  <li>Each column (9 squares) should have all the numbers 1 to 9</li>
+                  <li>Each box (3x3 - 9 squares) should have all the numbers 1 to 9</li>
+                </ol>
+              </li>
+              <li>2. No column, row or box can have two squares with the same number.</li>
+              <li>&nbsp;</li>
+              <li class="font-bold zero-help-title">Gameplay</li>
+              <li>Select a number from the numbers in the bottom row. Click on any square in the grid to fill in the selected
+                number in the square.</li>
+              <li>Any existing number in the square will be overwritten. Clicking on a square with the same number will remove
+                the number.</li>
+              <li>If you are not sure of a square, the possible numbers in the square can be marked by clicking the
+                <span class="fa fa-pencil inline"></span> icon.</li>
+              <li>The
+                <span class="fa fa-eraser inline"></span> icon can be used to erase the numbers from the squares that you click.</li>
+              <li>Clicking the
+                <span class="fa fa-plus inline"></span> icon will highlight the row and column of the square you click.</li>
+            </ul>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</ng-template>
+
+<ng-template #popupDebug let-c="close" let-d="dismiss">
+  <div class="modal-header">
+    <h4 class="modal-title">{{title}} - Debug</h4>
+    <button type="button" class="close" aria-label="Close" (click)="d('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <table class="settings-table">
+      <tr>
+        <td>
+          <div class="font-bold">zero v{{zeroVersion}}</div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="zero-help">
+            <ul class="list-unstyled">
+              <li>Screen Width - {{VW2PX(100)}}</li>
+              <li>Grid Width - {{VW2PX(96)}}</li>
+              <li>zeroCellSize - {{display.zeroCellSize}}</li>
+              <li>zeroHintSize - {{display.zeroHintSize}}</li>
+              <li>zeroKeySize - {{display.zeroKeySize}}</li>
+              <li>highlightNexus - {{highlightNexus.x}}, {{highlightNexus.y}}</li>
+            </ul>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</ng-template>
